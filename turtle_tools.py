@@ -10,7 +10,7 @@ def get_heading(first: turtle.Vec2D, second: turtle.Vec2D) -> float:
 
 
 def get_smooth_angle_delta(radius, minimum_arc_pixels: float = 2.0) -> float:
-    return math.atan(minimum_arc_pixels / radius)
+    return abs(math.atan(minimum_arc_pixels / radius))
 
 
 @contextmanager

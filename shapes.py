@@ -71,7 +71,11 @@ class Shapes:
         points = get_circle_points(radius)
         self.turtle.penup()
 
-        self.turtle.setpos(center + points[0])
+        try:
+            self.turtle.setpos(center + points[0])
+        except IndexError:
+            breakpoint()
+
         self.turtle.pendown()
 
         speed = self.turtle.speed()
@@ -106,11 +110,30 @@ class Shapes:
 
 if __name__ == '__main__':
     shapes = Shapes()
-    shapes.draw_partial_squares(75, 42, (False, True, True, False))
-    shapes.draw_circles_on_path(250, 125, 42, use_rainbow=True)
+    shapes.turtle.pensize(2)
+    width = shapes.screen.window_width()
+    height = shapes.screen.window_height()
+
+    diameter = min(width, height) * 0.9
+    radius = diameter / 2.0
+    path_diameter = diameter * 0.8
+    path_radius = path_diameter / 2.0
+    circles_radius = radius - path_radius
+
+    square_size = math.sqrt(0.5 * ((path_radius - circles_radius) * 0.95) ** 2)
+    count = 42
+
+    shapes.draw_partial_squares(square_size, count, (False, True, True, False))
+
+    shapes.draw_circles_on_path(
+        path_radius,
+        circles_radius,
+        count,
+        use_rainbow=True)
 
     # Hide the turtle
     shapes.turtle.hideturtle()
+    shapes.screen.update()
 
     # Save your design
     shapes.screen.getcanvas().postscript(file="shapes.eps")
