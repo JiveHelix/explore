@@ -57,7 +57,7 @@ class Trochoid:
 
     @arm_radius.setter
     def arm_radius(self, value):
-        self.set_radii(value, self._pen_radius)
+        self.set_radii(value, self._pen_radius, self._scale)
 
     @property
     def pen_radius(self):
@@ -65,27 +65,31 @@ class Trochoid:
 
     @pen_radius.setter
     def pen_radius(self, value):
-        self.set_radii(self._arm_radius, value)
+        self.set_radii(self._arm_radius, value, self._scale)
 
-    def set_pen_radius(self, pen_radius) -> None:
-        self.set_radii(self._arm_radius, pen_radius)
+    def set_radii(self, arm_radius, pen_radius, scale=1.0):
+        self._rolling_radius = \
+            scale * (arm_radius + self._pen_sign * pen_radius)
 
-    def set_radii(self, arm_radius, pen_radius, minimum_arc=2.0):
-        self._rolling_radius = arm_radius + self._pen_sign * pen_radius
+        self._scaled_pen_radius = scale * pen_radius
+        self._scale = scale
         self._pen_radius = pen_radius
         self._arm_radius = arm_radius
 
         self._arm_rate = 1.0
-        self._pen_rate = \
-            self._pen_sign * self._arm_rate * arm_radius / self._pen_radius
+
+        self._pen_rate = (
+            self._pen_sign
+            * self._arm_rate
+            * arm_radius
+            / pen_radius)
 
         # Calculate number of _turns required to complete pattern
-        self._turns = self._pen_radius / math.gcd(arm_radius, self._pen_radius)
+        self._turns = pen_radius / math.gcd(arm_radius, pen_radius)
 
         # Calculate _steps_per_turn to ensure smoothness
         self._angle_delta = tt.get_smooth_angle_delta(
-            self._rolling_radius + self._pen_radius,
-            minimum_arc)
+            self._rolling_radius + self._scaled_pen_radius)
 
         self._steps_per_turn = int(math.ceil(2 * math.pi / self._angle_delta))
         self._steps = int(math.ceil(self._turns * self._steps_per_turn))
@@ -106,7 +110,7 @@ class Trochoid:
 
     def calculate_orthogonal_position(self, trigfunc, angle):
         arm = self._rolling_radius * trigfunc(self._arm_rate * angle)
-        pen = self._pen_radius * trigfunc(self._pen_rate * angle)
+        pen = self._scaled_pen_radius * trigfunc(self._pen_rate * angle)
 
         return arm + pen
 
@@ -158,6 +162,17 @@ if __name__ == '__main__':
     trochoid = Trochoid()
     trochoid.turtle.speed(10)
     trochoid.screen.tracer(200)
+    trochoid.turtle.pensize(2)
+
+    width = trochoid.screen.window_width()
+    height = trochoid.screen.window_height()
+    radius = min(width, height) * 0.9 / 2.0
+    arm = 200
+    pen = 70
+
+    # Allow room for the epitroichoid to fit
+    scale = radius / (arm + 2 * pen)
+    trochoid.set_radii(200, 70, scale)
 
     print(f"{trochoid.is_hypotrochoid=}")
     print(f"{trochoid.is_epitrochoid=}")
@@ -166,7 +181,9 @@ if __name__ == '__main__':
     trochoid.is_epitrochoid = True
     print(f"{trochoid.is_hypotrochoid=}")
     print(f"{trochoid.is_epitrochoid=}")
-    trochoid.pen_radius = trochoid.pen_radius - 5
+
+    epi_pen = 65
+    trochoid.set_radii(arm, epi_pen, scale)
     trochoid.draw()
 
     # Hide the turtle
